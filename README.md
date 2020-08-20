@@ -1,2 +1,2 @@
 # GeneticAlgorithm
-Implement of Genetic Algorithm in Julia Language.
+Implements of Genetic Algorithm in Julia Language.
