@@ -18,49 +18,50 @@ def fitness(x, y):
 
 
 class Gene():
-    mapper = {"0": "1", "1": "0"}
-
-    full_length = 46
+    full_length = 22
     half_length = full_length // 2
     scale = (1 << half_length) / 10
 
     def __init__(self, decimal_x, decimal_y):
-        self.x = self.__encode(decimal_x)
-        self.y = self.__encode(decimal_y)
+        self.xy = [self.__encode(decimal_x), self.__encode(decimal_y)]
 
     def __encode(self, decimal):
         integer = int((decimal + 5.0) * self.scale)
-        binary = bin(integer)[2:]
-        string = (self.half_length - len(binary)) * '0' + binary
-        return string
+        return integer
 
-    def __decode(self, string):
-        integer = int(string, base=2)
+    def __decode(self, integer):
         decimal = (integer / self.scale) - 5.0
         return decimal
 
     def decode(self):
-        x = self.__decode(self.x)
-        y = self.__decode(self.y)
+        x = self.__decode(self.xy[0])
+        y = self.__decode(self.xy[1])
         return x, y
 
     def mutation(self):
         r = random.randint(0, self.full_length - 1)
         j = r // self.half_length
         k = r %  self.half_length
-        exec("self.{0} = self.{0}[:k] + self.mapper[self.{0}[k]] + self.{0}[k+1:]".format(["x", "y"][j]))
+        self.xy[j] ^= (1 << (self.half_length - k - 1))
 
     def crossover(self, gene):
-        cross_pos = random.randint(1, self.full_length - 1)
-        s_xy = self.x + self.y
-        g_xy = gene.x + gene.y
+        cross_pos = random.randint(1, self.full_length - 2)
+        if cross_pos < self.half_length:
+            self.xy[1], gene.xy[1] = gene.xy[1], self.xy[1]
+            index = 0
+        else:
+            cross_pos -= self.half_length
+            index = 1
 
-        s_fc = s_xy[:cross_pos] + g_xy[cross_pos:]
-        g_fc = g_xy[:cross_pos] + s_xy[cross_pos:]
-        self.x = s_fc[:self.half_length]
-        self.y = s_fc[self.half_length:]
-        gene.x = g_fc[:self.half_length]
-        gene.y = g_fc[self.half_length:]
+        bit_mask_lo = (1 << (self.half_length - cross_pos)) - 1
+        bit_mask_hi = ~bit_mask_lo
+        s_hi = self.xy[index] & bit_mask_hi
+        s_lo = self.xy[index] & bit_mask_lo
+        g_hi = gene.xy[index] & bit_mask_hi
+        g_lo = gene.xy[index] & bit_mask_lo
+        self.xy[index] = s_hi | g_lo
+        gene.xy[index] = g_hi | s_lo
+
 
 
 class Population():
@@ -142,6 +143,7 @@ class Population():
             self.getbest()
 
     def returnbest(self):
+        print(*self.results, sep="\n")
         self.results.sort(key=lambda i:i[2])
         return self.results[len(self.results)-1]
 

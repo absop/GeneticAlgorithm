@@ -53,20 +53,19 @@ end
 
 function select!(genes, fitnesses)
     total = sum(fitnesses)
-    start = 0
+    start = 0.0
     old_genes = copy(genes)
-    distribution = []
+    parray = []
     for i in 1:length(old_genes)
-        temp = fitnesses[i]/total + start
-        append!(distribution, temp)
-        start = temp
+        start += fitnesses[i] / total
+        append!(parray, start)
     end
 
     for i in 1:length(old_genes)
         randx = rand()
         index = 0
         for j in 1:length(old_genes)
-            if distribution[j] < randx
+            if parray[j] < randx
                 continue
             else
                 index = j
@@ -92,9 +91,7 @@ function crossover!(genes)
             cross_pos = rand(2:lfc-1)
 
             if cross_pos <= lhc
-                temp = genes[i][2]
-                genes[i][2] = genes[j][2]
-                genes[j][2] = temp
+                genes[i][2], genes[j][2] = genes[j][2], genes[i][2]
                 index = 1
             else
                 cross_pos -= lhc
@@ -181,7 +178,7 @@ function evolute(n, generation)
             index = i
         end
     end
-
+    foreach(index->println([xarray[index], yarray[index], zarray[index]]), 1:length(zarray))
     xarray[index], yarray[index], zarray[index]
 end
 

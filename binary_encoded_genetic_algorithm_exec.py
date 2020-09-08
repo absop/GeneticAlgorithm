@@ -17,9 +17,20 @@ def fitness(x, y):
     return r1 * r2 * r3
 
 
-class Gene():
-    mapper = {"0": "1", "1": "0"}
+code_string = (
+    lambda code: "\n".join(l.lstrip() for l in code.split("\n")))("""
+    bit_mask_lo = (1 << (self.half_length - cross_pos)) - 1
+    bit_mask_hi = ~bit_mask_lo
+    s_hi = self.{0} & bit_mask_hi
+    s_lo = self.{0} & bit_mask_lo
+    g_hi = gene.{0} & bit_mask_hi
+    g_lo = gene.{0} & bit_mask_lo
+    self.{0} = s_hi | g_lo
+    gene.{0} = g_hi | s_lo
+""")
 
+
+class Gene():
     full_length = 46
     half_length = full_length // 2
     scale = (1 << half_length) / 10
@@ -30,12 +41,9 @@ class Gene():
 
     def __encode(self, decimal):
         integer = int((decimal + 5.0) * self.scale)
-        binary = bin(integer)[2:]
-        string = (self.half_length - len(binary)) * '0' + binary
-        return string
+        return integer
 
-    def __decode(self, string):
-        integer = int(string, base=2)
+    def __decode(self, integer):
         decimal = (integer / self.scale) - 5.0
         return decimal
 
@@ -48,19 +56,19 @@ class Gene():
         r = random.randint(0, self.full_length - 1)
         j = r // self.half_length
         k = r %  self.half_length
-        exec("self.{0} = self.{0}[:k] + self.mapper[self.{0}[k]] + self.{0}[k+1:]".format(["x", "y"][j]))
+        exec("self.{} ^= (1 << (self.half_length - {} - 1))".format(
+            ["x", "y"][j], k))
 
     def crossover(self, gene):
-        cross_pos = random.randint(1, self.full_length - 1)
-        s_xy = self.x + self.y
-        g_xy = gene.x + gene.y
+        cross_pos = random.randint(1, self.full_length - 2)
+        if cross_pos < self.half_length:
+            self.y, gene.y = gene.y, self.y
+            chromosome = "x"
+        else:
+            cross_pos -= self.half_length
+            chromosome = "y"
 
-        s_fc = s_xy[:cross_pos] + g_xy[cross_pos:]
-        g_fc = g_xy[:cross_pos] + s_xy[cross_pos:]
-        self.x = s_fc[:self.half_length]
-        self.y = s_fc[self.half_length:]
-        gene.x = g_fc[:self.half_length]
-        gene.y = g_fc[self.half_length:]
+        exec(code_string.format(chromosome))
 
 
 class Population():

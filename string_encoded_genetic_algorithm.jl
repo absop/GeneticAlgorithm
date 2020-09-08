@@ -56,18 +56,17 @@ function select!(genes, fitnesses)
     total = sum(fitnesses)
     start = 0.0
     old_genes = copy(genes)
-    distribution = []
+    parray = []
     for i in 1:length(old_genes)
-        temp = fitnesses[i]/total + start
-        append!(distribution, temp)
-        start = temp
+        start += fitnesses[i] / total
+        append!(parray, start)
     end
 
     for i in 1:length(old_genes)
         randx = rand()
         index = 0
         for j in 1:length(old_genes)
-            if distribution[j] < randx
+            if parray[j] < randx
                 continue
             else
                 index = j
