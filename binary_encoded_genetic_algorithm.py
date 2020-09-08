@@ -174,5 +174,6 @@ if __name__ == '__main__':
     x, y, z = demo.returnbest()
     demo.ax.scatter(x, y, z, c='red', marker='o')
     demo.ax.text(x, y, z, '%.3f' % z)
+    plt.savefig('ga.png', dpi=300)
     plt.show()
     print(x, y, z)
